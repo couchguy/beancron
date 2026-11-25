@@ -79,6 +79,9 @@ DATE custom "schedule" "UNIQUE-NAME"
 | `enabled` | `FALSE` to turn an entry off without deleting it |
 | anything else | Passed to the job as a parameter |
 
+The schedule file can `include` other files (e.g. one per ledger: `include "*/schedule.beancount"`).
+Each entry's `ledger:` path is relative to its own file, so `books/home/schedule.beancount` can say `ledger: "main.beancount"`.
+
 An entry needs `cron`, `after`, or both.
 
 ## Options
@@ -98,7 +101,7 @@ Jobs run in the schedule file's folder, with these environment variables:
 | Variable | Value |
 | --- | --- |
 | `JOB_<KEY>` | Each extra field, e.g. `days: 7` becomes `JOB_DAYS=7` |
-| `LEDGER` | If the entry has `ledger:`, the full path to that file (relative paths start from the schedule file's folder) |
+| `LEDGER` | If the entry has `ledger:`, the full path to that file. A relative path starts from the folder of the file the entry is in. |
 | `BEANCRON_ENTRY` | The schedule entry's name |
 | `BEANCRON_DIR` | The schedule file's folder |
 

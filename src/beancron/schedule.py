@@ -41,6 +41,7 @@ class Entry:
     enabled: bool = True
     params: dict[str, str] = field(default_factory=dict)
     valid: bool = True
+    source_dir: Path | None = None  # folder of the file this entry is in
 
     def trigger(self) -> str:
         parts = []
@@ -122,6 +123,9 @@ def _read_entry(d, problems: list[str]) -> Entry | None:
         return None
 
     entry = Entry(name=values[0], job=None, where=where, active_from=d.date)
+    filename = meta.get("filename")
+    if filename and Path(filename).is_absolute():
+        entry.source_dir = Path(filename).parent
 
     def bad(message: str) -> None:
         problems.append(f"{where}: '{entry.name}': {message}")

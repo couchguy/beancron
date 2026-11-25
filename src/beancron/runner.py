@@ -191,13 +191,15 @@ class Scheduler:
         for key, value in entry.params.items():
             env[_env_name(key)] = value
         if "ledger" in entry.params:
-            env["LEDGER"] = str(self.ledger_path(entry.params["ledger"]))
+            env["LEDGER"] = str(self.ledger_path(entry))
         return env
 
-    def ledger_path(self, value: str) -> Path:
-        """A ledger path from an entry: absolute, ~/..., or relative to the schedule's folder."""
-        path = Path(value).expanduser()
-        return path if path.is_absolute() else self.config.base_dir / path
+    def ledger_path(self, entry: Entry) -> Path:
+        """The entry's ledger: absolute, ~/..., or relative to the file the entry is in."""
+        path = Path(entry.params["ledger"]).expanduser()
+        if path.is_absolute():
+            return path
+        return (entry.source_dir or self.config.base_dir) / path
 
     def _run(self, entry: Entry) -> str:
         """Run one entry's job. Returns "ok" or a short failure reason."""
@@ -211,8 +213,8 @@ class Scheduler:
             log.flush()
             if command is None:
                 status = f"failed: unknown job '{entry.job}'"
-            elif "ledger" in entry.params and not self.ledger_path(entry.params["ledger"]).exists():
-                status = f"failed: no ledger at {self.ledger_path(entry.params['ledger'])}"
+            elif "ledger" in entry.params and not self.ledger_path(entry).exists():
+                status = f"failed: no ledger at {self.ledger_path(entry)}"
             else:
                 try:
                     result = subprocess.run(
@@ -278,9 +280,9 @@ class Scheduler:
                 problems.append(f"{entry.where}: '{entry.name}': after '{entry.after}', "
                                 "but no schedule has that name")
             ledger = entry.params.get("ledger")
-            if ledger and not self.ledger_path(ledger).exists():
+            if ledger and not self.ledger_path(entry).exists():
                 problems.append(f"{entry.where}: '{entry.name}': no ledger at "
-                                f"{self.ledger_path(ledger)}")
+                                f"{self.ledger_path(entry)}")
         for name in after_loops(self.schedule):
             problems.append(f"'{name}': after: links loop back to itself")
         return problems

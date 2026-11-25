@@ -206,10 +206,18 @@ class RunnerTests(unittest.TestCase):
         self.assertEqual(s.run_now("a"), [("a", "failed: unknown job 'nope'")])
 
     def test_ledger_paths(self):
-        s = self.scheduler([])
-        self.assertEqual(s.ledger_path("main.beancount"), self.books / "main.beancount")
-        self.assertEqual(s.ledger_path("/srv/books/main.beancount"), Path("/srv/books/main.beancount"))
-        self.assertEqual(s.ledger_path("~/x.beancount"), Path.home() / "x.beancount")
+        s = self.scheduler([
+            custom("schedule", "a", job="record", cron="0 6 * * *", ledger="main.beancount", line=1),
+            custom("schedule", "b", job="record", cron="0 6 * * *", ledger="/srv/main.beancount", line=2),
+            custom("schedule", "c", job="record", cron="0 6 * * *", ledger="~/x.beancount", line=3),
+            # An entry from an included file: relative to that file's folder
+            custom("schedule", "d", job="record", cron="0 6 * * *", ledger="main.beancount", line=4,
+                   filename=str(self.books / "personal" / "schedule.beancount")),
+        ])
+        paths = [s.ledger_path(e) for e in s.schedule.entries]
+        self.assertEqual(paths, [self.books / "main.beancount", Path("/srv/main.beancount"),
+                                 Path.home() / "x.beancount",
+                                 self.books / "personal" / "main.beancount"])
 
     def test_list_rows(self):
         s = self.scheduler([custom("schedule", "prices", job="record", cron="30 17 * * 1-5")])
