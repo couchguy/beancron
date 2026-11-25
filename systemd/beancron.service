@@ -1,0 +1,8 @@
+[Unit]
+Description=beancron: run scheduled Beancount jobs that are due
+
+[Service]
+Type=oneshot
+# systemd doesn't expand ~, so use your username and full path here.
+User=YOUR_USER
+ExecStart=/home/YOUR_USER/ledger/venv/bin/beancron tick
